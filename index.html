@@ -1,59 +1,31 @@
 <!DOCTYPE html>
-<html lang="my">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Matrix OS - Ultimate Edition</title>
+    <title>Matrix OS - Full Restore</title>
     <script src="https://cdn.jsdelivr.net/npm/appwrite@11.0.0"></script>
     <style>
-        body, html { 
-            margin: 0; padding: 0; height: 100%; width: 100%; 
-            overflow: hidden; background-color: #000; 
-            font-family: 'Courier New', monospace; color: #00ff41; 
-        }
+        body, html { margin: 0; padding: 0; height: 100%; width: 100%; overflow: hidden; background-color: #000; font-family: 'Courier New', monospace; color: #00ff41; }
         #matrix { position: fixed; top: 0; left: 0; z-index: -1; opacity: 0.1; }
+        
+        /* Login Overlay */
+        #loginOverlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.95); z-index: 500; display: flex; flex-direction: column; justify-content: center; align-items: center; }
+        .login-box { z-index: 600; text-align: center; border: 1px solid #00ff41; padding: 25px; background: #000; box-shadow: 0 0 20px #00ff41; }
+        .pass-input { background: transparent; border: 1px solid #00ff41; color: #00ff41; padding: 10px; width: 160px; text-align: center; outline: none; font-size: 20px; margin-top: 15px; }
 
-        /* Login Overlay & Background Logs */
-        #loginOverlay {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0, 0, 0, 0.95); z-index: 500; display: flex;
-            flex-direction: column; justify-content: center; align-items: center;
-        }
-        #bgLogs {
-            position: fixed; top: 0; left: 10px; width: 100%; height: 100%;
-            font-size: 10px; color: rgba(0, 255, 65, 0.2); 
-            pointer-events: none; z-index: 400; overflow: hidden;
-        }
-        .login-box {
-            z-index: 600; text-align: center; border: 1px solid #00ff41; 
-            padding: 25px; background: #000; box-shadow: 0 0 20px #00ff41;
-        }
-        .pass-input { 
-            background: transparent; border: 1px solid #00ff41; color: #00ff41; 
-            padding: 10px; width: 160px; text-align: center; outline: none; font-size: 20px; margin-top: 15px;
-        }
+        /* Top Bar Stats (CPU, PING, NODE) */
+        .top-stats { display: none; justify-content: space-between; padding: 5px 15px; font-size: 11px; border-bottom: 1px solid rgba(0, 255, 65, 0.2); background: rgba(0, 10, 0, 0.9); z-index: 100; }
 
-        /* Top Bar Stats */
-        .top-stats {
-            display: none; justify-content: space-between; 
-            padding: 5px 15px; font-size: 11px; 
-            border-bottom: 1px solid rgba(0, 255, 65, 0.2);
-            background: rgba(0, 10, 0, 0.9);
-        }
+        /* Main System UI */
+        .system-container { display: none; flex-direction: column; height: calc(100vh - 25px); padding: 15px; box-sizing: border-box; }
 
-        /* Main System Container */
-        .system-container {
-            display: none; flex-direction: column; height: calc(100vh - 25px);
-            padding: 15px; box-sizing: border-box;
-        }
-
-        /* --- RGB Auto Color Radar with Grid & Dots --- */
-        .radar-box {
-            position: absolute; top: 45px; right: 20px; width: 85px; height: 85px;
-            border: 2px solid #00ff41; border-radius: 50%; overflow: hidden;
+        /* RGB Auto Radar Display */
+        .radar-box { 
+            position: absolute; top: 45px; right: 20px; width: 85px; height: 85px; 
+            border: 2px solid #00ff41; border-radius: 50%; overflow: hidden; 
             background: radial-gradient(circle, rgba(0,34,0,0.5) 0%, #000 80%);
-            animation: radarRGB 8s linear infinite;
-            transition: border-color 0.5s, box-shadow 0.5s;
+            animation: radarRGB 8s linear infinite; /* Auto Color Change */
         }
         @keyframes radarRGB {
             0% { border-color: #00ff41; box-shadow: 0 0 10px #00ff41; }
@@ -68,37 +40,22 @@
                               linear-gradient(90deg, rgba(0, 255, 65, 0.1) 1px, transparent 1px);
             background-size: 10px 10px;
         }
-        .radar-sweep {
-            position: absolute; top: 50%; left: 50%; width: 100%; height: 100%;
-            background-image: conic-gradient(from 0deg, rgba(0, 255, 65, 0.6) 0%, transparent 50%);
-            transform-origin: top left; animation: sweep 3s linear infinite;
-        }
-        .ping-dot {
-            position: absolute; width: 4px; height: 4px; background: #00ff41;
-            border-radius: 50%; animation: blink 2s infinite;
+        .radar-sweep { 
+            position: absolute; top: 50%; left: 50%; width: 100%; height: 100%; 
+            background-image: conic-gradient(from 0deg, rgba(0, 255, 65, 0.6) 0%, transparent 50%); 
+            transform-origin: top left; animation: sweep 3s linear infinite; 
         }
         @keyframes sweep { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-        @keyframes blink { 0%, 100% { opacity: 0; } 50% { opacity: 1; } }
 
-        /* Error state for Radar */
-        .radar-box.error { 
-            animation: none !important; border-color: #ff3131 !important; 
-            box-shadow: 0 0 20px #ff3131 !important; 
-        }
-        .radar-box.error .radar-sweep { background-image: conic-gradient(from 0deg, #ff3131 0%, transparent 50%) !important; }
-
-        /* Terminal Style */
-        .boot-log { flex-grow: 1; overflow-y: auto; font-size: 13px; line-height: 1.5; scrollbar-width: none; }
+        /* Terminal Logs */
+        .boot-log { flex-grow: 1; overflow-y: auto; font-size: 13px; line-height: 1.5; margin-top: 10px; }
         .boot-log::-webkit-scrollbar { display: none; }
         .input-line { display: flex; align-items: center; padding: 10px 0; border-top: 1px solid rgba(0, 255, 65, 0.1); }
         .prompt { color: #ff00ff; margin-right: 8px; font-weight: bold; }
         #cmdInput { background: transparent; border: none; color: #fff; outline: none; flex: 1; font-family: inherit; font-size: 16px; }
 
-        /* Popups */
-        .custom-popup {
-            position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
-            width: 85%; background: #000; border: 1px solid #ff00ff; padding: 20px; display: none; z-index: 1000;
-        }
+        /* Popup Boxes */
+        .custom-popup { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 90%; background: #000; border: 1px solid #ff00ff; padding: 20px; display: none; z-index: 1000; }
         .ok { color: #00ffff; }
         .crit { color: #ff3131; }
     </style>
@@ -106,7 +63,6 @@
 <body>
 
 <canvas id="matrix"></canvas>
-<div id="bgLogs"></div>
 
 <div id="loginOverlay">
     <div class="login-box">
@@ -122,12 +78,8 @@
 </div>
 
 <div class="system-container" id="mainSystem">
-    <div class="radar-box" id="radarRing">
-        <div class="radar-sweep" id="radarBeam"></div>
-        <div class="ping-dot" style="top:20%; left:30%;"></div>
-        <div class="ping-dot" style="top:65%; left:70%; animation-delay: 0.5s;"></div>
-    </div>
-
+    <div class="radar-box"><div class="radar-sweep"></div></div>
+    
     <div id="bootLog" class="boot-log"></div>
 
     <div class="input-line">
@@ -138,46 +90,35 @@
 
 <div id="noteBox" class="custom-popup">
     <div style="color:#ff00ff; margin-bottom:10px;">[ INJECT DATA ]</div>
-    <textarea id="noteInput" style="width:100%; height:80px; background:#111; color:#00ff41; border:1px solid #333; padding:5px;"></textarea>
-    <button onclick="saveNote()" style="width:100%; padding:10px; margin-top:10px; background:#00ffff; border:none; font-weight:bold;">SYNC TO CLOUD</button>
+    <textarea id="noteInput" style="width:100%; height:100px; background:#111; color:#00ff41; border:1px solid #333; padding:10px; resize:none; outline:none;"></textarea>
+    <button onclick="saveNote()" style="width:100%; padding:12px; margin-top:10px; background:#00ffff; border:none; font-weight:bold;">SYNC TO CLOUD</button>
 </div>
 
 <div id="listBox" class="custom-popup">
     <div style="color:#ff00ff; margin-bottom:10px;">[ DATA STORE ]</div>
-    <div id="noteContent" style="max-height:200px; overflow-y:auto; font-size:12px; color:#00ffff;"></div>
+    <div id="noteContent" style="max-height:250px; overflow-y:auto; font-size:12px; color:#00ffff;"></div>
     <button onclick="document.getElementById('listBox').style.display='none'" style="width:100%; padding:10px; margin-top:15px; background:#ff3131; color:#fff; border:none;">CLOSE</button>
 </div>
 
 <script>
-    // --- Appwrite Configuration ---
     const { Client, Databases, ID } = Appwrite;
     const client = new Client().setEndpoint('https://sgp.cloud.appwrite.io/v1').setProject('69a48f7100363311b552');
     const databases = new Databases(client);
     const DATABASE_ID = '69a48f91000d098cf751';
     const COLLECTION_ID = 'usernotes';
 
-    // 1. Background Logs for Login
-    const logPool = ["Init Core...", "AES-256 Check", "Node SGP-01", "Mem: 0x00F1", "Cloud Sync...", "Radar Init..."];
-    setInterval(() => {
-        const line = document.createElement('div');
-        line.innerText = `[${Math.random().toString(16).substring(2,6)}] ${logPool[Math.floor(Math.random()*logPool.length)]}`;
-        document.getElementById('bgLogs').appendChild(line);
-        if (document.getElementById('bgLogs').childNodes.length > 40) document.getElementById('bgLogs').removeChild(document.getElementById('bgLogs').firstChild);
-    }, 200);
-
-    // 2. Login Logic
+    // Login logic
     document.getElementById('passInput').addEventListener('keypress', (e) => {
         if (e.key === 'Enter' && e.target.value === "1234") {
             document.getElementById('loginOverlay').style.display = "none";
-            document.getElementById('bgLogs').style.display = "none";
             document.getElementById('statBar').style.display = "flex";
             document.getElementById('mainSystem').style.display = "flex";
-            runBoot();
             startStatsUpdater();
+            runBoot();
         }
     });
 
-    // 3. Stats & Radar Health
+    // Stats Updater (CPU & PING)
     function startStatsUpdater() {
         setInterval(async () => {
             document.getElementById('cpuVal').innerText = Math.floor(Math.random() * 15) + 5;
@@ -185,23 +126,13 @@
             try {
                 await databases.listDocuments(DATABASE_ID, COLLECTION_ID, [Appwrite.Query.limit(1)]);
                 document.getElementById('pingVal').innerText = Date.now() - start;
-                document.getElementById('radarRing').classList.remove('error');
-            } catch (e) {
-                document.getElementById('pingVal').innerText = "ERR";
-                document.getElementById('radarRing').classList.add('error');
-            }
+            } catch (e) { document.getElementById('pingVal').innerText = "ERR"; }
         }, 4000);
     }
 
-    // 4. Booting Sequence
+    // Boot Sequence
     function runBoot() {
-        const sequence = [
-            "[0.01] Booting Kernel...", 
-            "[0.45] Radar Drivers: <span class='ok'>LOADED</span>", 
-            "[0.88] Cloud Link: <span class='ok'>ACTIVE</span>", 
-            "WELCOME TO MATRIX ULTIMATE.", 
-            "Type 'help' to see commands."
-        ];
+        const sequence = ["[0.02] Kernel Boot...", "[0.45] Radar Drivers: <span class='ok'>LOADED</span>", "[0.89] Cloud Link: <span class='ok'>ACTIVE</span>", "System Ready."];
         let i = 0;
         const itv = setInterval(() => {
             if (i < sequence.length) { printLog(sequence[i]); i++; }
@@ -209,13 +140,7 @@
         }, 400);
     }
 
-    function printLog(msg) {
-        const div = document.createElement('div'); div.innerHTML = msg;
-        document.getElementById('bootLog').appendChild(div);
-        document.getElementById('bootLog').scrollTop = document.getElementById('bootLog').scrollHeight;
-    }
-
-    // 5. Terminal Commands
+    // Terminal Commands
     document.getElementById('cmdInput').addEventListener('keypress', (e) => {
         if (e.key === 'Enter') {
             const val = e.target.value.toLowerCase().trim();
@@ -223,18 +148,18 @@
             if (val === "install note") document.getElementById('noteBox').style.display = "block";
             else if (val === "list") fetchNotes();
             else if (val === "clear") document.getElementById('bootLog').innerHTML = "";
-            else if (val === "help") printLog("Commands: install note, list, delete [ID], clear");
-            else if (val.startsWith("delete ")) deleteNote(val.split(" ")[1]);
             e.target.value = "";
         }
     });
 
-    // 6. Appwrite Functions
+    // Save Note & Auto Clear
     async function saveNote() {
-        const content = document.getElementById('noteInput').value;
+        const field = document.getElementById('noteInput');
+        const content = field.value;
         try {
             await databases.createDocument(DATABASE_ID, COLLECTION_ID, ID.unique(), { content: content });
-            printLog("<span class='ok'>[OK]</span> Data Injected to Cloud.");
+            printLog("<span class='ok'>[OK]</span> Data Sync Complete.");
+            field.value = ""; // Clear input
             document.getElementById('noteBox').style.display = "none";
         } catch (e) { printLog("<span class='crit'>[ERR]</span> Sync Failed."); }
     }
@@ -245,22 +170,18 @@
         contentDiv.innerHTML = "Fetching Cloud Data...";
         try {
             const res = await databases.listDocuments(DATABASE_ID, COLLECTION_ID);
-            contentDiv.innerHTML = res.documents.map(d => `<div>ID[${d.$id.substring(0,4)}]: ${d.content}</div>`).join("");
+            contentDiv.innerHTML = res.documents.map(d => `<div style='margin-bottom:8px; border-bottom:1px dashed #333;'>ID[${d.$id.substring(0,8)}]: ${d.content}</div>`).join("");
         } catch (e) { contentDiv.innerHTML = "Fetch Error."; }
     }
 
-    async function deleteNote(id) {
-        try {
-            const res = await databases.listDocuments(DATABASE_ID, COLLECTION_ID);
-            const target = res.documents.find(d => d.$id.startsWith(id));
-            if (target) {
-                await databases.deleteDocument(DATABASE_ID, COLLECTION_ID, target.$id);
-                printLog(`<span class='ok'>[OK]</span> Deleted: ${id}`);
-            }
-        } catch (e) { printLog("Delete Failed."); }
+    function printLog(msg) {
+        const div = document.createElement('div'); div.innerHTML = msg;
+        const log = document.getElementById('bootLog');
+        log.appendChild(div);
+        log.scrollTop = log.scrollHeight;
     }
 
-    // Matrix Rain
+    // Matrix Rain Background
     const canvas = document.getElementById('matrix');
     const ctx = canvas.getContext('2d');
     canvas.width = window.innerWidth; canvas.height = window.innerHeight;
